@@ -1,8 +1,3 @@
-# External imports
-import pandas as pd
-from sklearn import datasets
-
-
 #####################
 # Exposed functions #
 #####################
@@ -216,54 +211,3 @@ def target_encoding_multiple_features(df, target_variable, categorical_variables
     for categorical_variable in categorical_variables:
         df = target_encoding(df, target_variable, categorical_variable)
     return df
-
-
-#################
-# Main function #
-#################
-
-if __name__ == "__main__":
-    iris = datasets.load_iris()
-    iris_df = pd.DataFrame(
-        iris.data,
-        columns=iris.feature_names,
-        index=pd.Index([i for i in range(iris.data.shape[0])]),
-    ).join(
-        pd.DataFrame(
-            iris.target,
-            columns=pd.Index(["species"]),
-            index=pd.Index([i for i in range(iris.target.shape[0])]),
-        )
-    )
-
-    print("ORDINAL --------------------")
-    d = [
-        {"size": "small"},
-        {"size": "medium"},
-        {"size": "small"},
-        {"size": "small"},
-        {"size": "big"},
-        {"size": "medium"},
-    ]
-    df = pd.DataFrame(d, index=range(len(d)))
-    print(df)
-    print(ordinal_encoding(df, categorical_variable="size"))
-    print("ONE HOT --------------------")
-    print(iris_df.head())
-    print(
-        one_hot_encoding(
-            iris_df, categorical_variable="species", prefix_new_feature="is_"
-        ).head()
-    )
-    print("TARGET --------------------")
-    d = [
-        {"size": 30, "animal": "cat"},
-        {"size": 9, "animal": "hamster"},
-        {"size": 25, "animal": "cat"},
-        {"size": 24, "animal": "cat"},
-        {"size": 46, "animal": "dog"},
-        {"size": 10, "animal": "hamster"},
-    ]
-    df = pd.DataFrame(d, index=range(len(d)))
-    print(df)
-    print(target_encoding(df, "size", "animal"))
