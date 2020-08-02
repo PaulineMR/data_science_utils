@@ -85,9 +85,11 @@ def city_encoding(df, city_variable):
     2  Saint-Étienne     42218        42100        7996   ...    LOIRE         AUVERGNE-RHONE-ALPES
     3       Vauxbuin     02770         2200         506   ...    AISNE  NORD-PAS-DE-CALAIS-PICARDIE
     """
+    df_copy = df.copy()
+
     # Simplify the name of the cities
-    df["basic_city_name"] = df[city_variable].copy()
-    df["basic_city_name"] = _simplify_string_variable(df["basic_city_name"])
+    df_copy["basic_city_name"] = df_copy[city_variable].copy()
+    df_copy["basic_city_name"] = _simplify_string_variable(df_copy["basic_city_name"])
 
     # Load the dataset with the informations about the cities
     df_cities = pd.read_csv(os.path.join(CITY_DATASET_PATH, CITY_DATASET)).drop(
@@ -104,10 +106,17 @@ def city_encoding(df, city_variable):
     # Simplify the name of the cities
     df_cities["NOM_COM"] = _simplify_string_variable(df_cities["NOM_COM"])
     df_cities.drop_duplicates(subset="NOM_COM", keep="first", inplace=True)
+    # Make the departement and the postal name into string
+    df_cities["CODE_DEPT"] = df_cities["CODE_DEPT"].astype(str)
+    df_cities["CODE_DEPT"] = df_cities["CODE_DEPT"].apply(lambda x: "{0:0>2}".format(x))
+    df_cities["CODE_POSTAL"] = df_cities["CODE_POSTAL"].astype(str)
+    df_cities["CODE_POSTAL"] = df_cities["CODE_POSTAL"].apply(
+        lambda x: "{0:0>5}".format(x)
+    )
 
     # Merge the two datasets
-    df = df.merge(df_cities, left_on="basic_city_name", right_on="NOM_COM")
-    return df.drop(columns=["basic_city_name", "NOM_COM"])
+    df_copy = df_copy.merge(df_cities, left_on="basic_city_name", right_on="NOM_COM")
+    return df_copy.drop(columns=["basic_city_name"])
 
 
 def generate_periodic_variables(
@@ -147,78 +156,38 @@ def generate_periodic_variables(
     >>> print(df)
     >>> print(def generate_periodic_variables(df, "angle", 360, True)
     """
-    if df[periodic_variable].max() > modulo_variable:
+    df_copy = df.copy()
+
+    # Check the values of the periodic variable
+    if df_copy[periodic_variable].max() > modulo_variable:
         raise ValueError(
             f"modulo_variable ({modulo_variable}) is smaller than the maximum value of the periodic_variable \
-            ({df[periodic_variable].max()})"
+            ({df_copy[periodic_variable].max()})"
         )
 
     # Place the variable on a trigonometric circle
-    df[periodic_variable] = df[periodic_variable] * (2 * np.pi / modulo_variable)
-    print(df[periodic_variable])
+    df_copy[periodic_variable] = df_copy[periodic_variable] * (
+        2 * np.pi / modulo_variable
+    )
     # Get the cosinus and the sinus
-    df[f"cos_{periodic_variable}"] = np.cos(df[periodic_variable])
-    df[f"sin_{periodic_variable}"] = np.sin(df[periodic_variable])
+    df_copy[f"cos_{periodic_variable}"] = np.cos(df_copy[periodic_variable])
+    df_copy[f"sin_{periodic_variable}"] = np.sin(df_copy[periodic_variable])
 
     if drop_original_variable:
-        return df.drop(columns=periodic_variable)
-    return df
-
-
-def reverse_periodic_variables(
-    df, periodic_variable, modulo_variable, drop_periodic_variables=True
-):
-    """
-    Using cos_{periodic_variable} and sin_{periodic_variable}, reverse the function generate_periodic_variables
-    to get back the original value of periodic_variable.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        contains at least the cos_{periodic_variable} and sin_{periodic_variable}
-    periodic_variable: str
-        name of the variable that is periodic
-    modulo_variable: int
-        the periodic_variable has a period of modulo_variable, that is to say that in the periodic_variable
-        0 is equivalent to modulo_variable and that periodic_variable is between 0 and modulo_variable-1
-    drop_periodic_variables: bool, optional
-        if True the cos_{periodic_variable} and sin_{periodic_variable} are dropped from the dataframe.
-        Default is True
-
-    Returns
-    ----------
-    pd.DataFrame
-        original DataFrame with the new added variable
-
-    Examples:
-    ---------
-    >>> print(df)
-    >>> print(def reverse_periodic_variables(df, "angle", 360, True)
-    """
-    # TODO Make it work ? the angles given are not right
-    # Get the angle value from the cos and the sin
-    df[periodic_variable] = np.arctan2(
-        df[f"sin_{periodic_variable}"], df[f"cos_{periodic_variable}"]
-    )
-    print(df[periodic_variable])
-    # Transform the angle into the variable
-    df[periodic_variable] = df[periodic_variable] / (2 * np.pi / modulo_variable)
-
-    if drop_periodic_variables:
-        return df.drop(columns=[f"cos_{periodic_variable}", f"sin_{periodic_variable}"])
-    return df
+        return df_copy.drop(columns=periodic_variable)
+    return df_copy
 
 
 def get_temporal_variables(df, date_variable):
     """
     Get from a date variable new informations that can be used to create a model with a machine learning
     algorithm.
-    The new features will be time, day (day of the week), month and year.
+    The new features will be time, day_of_week, day_of_month, month and year.
 
     Parameters
     ----------
     df: pd.DataFrame
-        contains at least the date_variable
+        contains at least the date_variable which contains pd.Timestamp
     date_variable: str
         name of the variable that represent the date
 
@@ -230,16 +199,26 @@ def get_temporal_variables(df, date_variable):
     Examples:
     ---------
     >>> print(df)
+                                 date
+    0       2020-01-31 10:00:00+00:00
+    1       2020-02-01 15:00:00+00:00
+    2       2020-03-15 00:00:00+00:00
     >>> print(def get_temporal_variables(df, "date")
+                                 date  time  day_of_week  day_of_month  month  year
+    0       2020-01-31 10:00:00+00:00    10            4            31      1  2020
+    1       2020-02-01 15:00:00+00:00    15            5             1      2  2020
+    2       2020-03-15 00:00:00+00:00     0            6            15      3  2020
     """
-    df[date_variable] = pd.to_datetime(df[date_variable])
+    df_copy = df.copy()
 
-    df["time"] = df[date_variable].dt.time
-    df["day"] = df[date_variable].dt.day
-    df["month"] = df[date_variable].dt.month
-    df["year"] = df[date_variable].dt.year
+    # Extract the informations about the date
+    df_copy["time"] = df_copy[date_variable].dt.hour
+    df_copy["day_of_week"] = df_copy[date_variable].dt.dayofweek
+    df_copy["day_of_month"] = df_copy[date_variable].dt.day
+    df_copy["month"] = df_copy[date_variable].dt.month
+    df_copy["year"] = df_copy[date_variable].dt.year
 
-    return df
+    return df_copy
 
 
 def get_periodic_temporal_variable(df, date_variable):
@@ -264,64 +243,49 @@ def get_periodic_temporal_variable(df, date_variable):
     Examples:
     ---------
     >>> print(df)
+                                 date
+    0       2020-01-31 10:00:00+00:00
+    1       2020-02-01 15:00:00+00:00
+    2       2020-03-15 00:00:00+00:00
     >>> print(def get_periodic_temporal_variable(df, "date")
+                                 date  year  cos_time  sin_time  ...  cos_month  sin_month
+    0       2020-01-31 10:00:00+00:00  2020 -0.866025  0.500000        1.000000   0.000000
+    1       2020-02-01 15:00:00+00:00  2020 -0.707107 -0.707107        0.866025   0.500000
+    2       2020-03-15 00:00:00+00:00  2020  1.000000  0.000000        0.500000   0.866025
     """
-    temporal_df = get_temporal_variables(df, date_variable)
+    df_copy = df.copy()
 
+    # Get the temporal variables
+    temporal_df = get_temporal_variables(df_copy, date_variable)
+
+    # Transform them into periodic variables
     temporal_df = generate_periodic_variables(
-        temporal_df, periodic_variable="time", max_value=24, drop_original_variable=True
-    )
-    temporal_df = generate_periodic_variables(
-        temporal_df, periodic_variable="day", max_value=7, drop_original_variable=True
+        temporal_df,
+        periodic_variable="time",
+        modulo_variable=24,
+        drop_original_variable=True,
     )
     temporal_df = generate_periodic_variables(
         temporal_df,
+        periodic_variable="day_of_week",
+        modulo_variable=7,
+        drop_original_variable=True,
+    )
+    # Day of month should be between 0->30 (and not 1->31)
+    temporal_df["day_of_month"] = temporal_df["day_of_month"] - 1
+    temporal_df = generate_periodic_variables(
+        temporal_df,
+        periodic_variable="day_of_month",
+        modulo_variable=31,
+        drop_original_variable=True,
+    )
+    # Month should be between 0->11 (and not 1->12)
+    temporal_df["month"] = temporal_df["month"] - 1
+    temporal_df = generate_periodic_variables(
+        temporal_df,
         periodic_variable="month",
-        max_value=12,
+        modulo_variable=12,
         drop_original_variable=True,
     )
 
     return temporal_df
-
-
-def reverse_get_periodic_temporal_variable(df, new_date_variable):
-    pass
-
-
-#################
-# Main function #
-#################
-
-if __name__ == "__main__":
-    # City test
-    d = [
-        {"ville": "Paris"},
-        {"ville": "Lyon"},
-        {"ville": "Saint-Étienne"},
-        {"ville": "Vauxbuin"},
-    ]
-    df = pd.DataFrame(d, index=range(len(d)))
-    print(df)
-    print(city_encoding(df, "ville"))
-
-    # Periodic test
-    d = [
-        {"month": 0},
-        {"month": 1},
-        {"month": 2},
-        {"month": 3},
-        {"month": 4},
-        {"month": 5},
-        {"month": 6},
-        {"month": 7},
-        {"month": 8},
-        {"month": 9},
-        {"month": 10},
-        {"month": 11},
-    ]
-    df = pd.DataFrame(d, index=range(len(d)))
-    print(df)
-    df_periodic = generate_periodic_variables(df, "month", 12)
-    print(df_periodic)
-    df_periodic = reverse_periodic_variables(df_periodic, "month", 12)
-    print(df_periodic)
