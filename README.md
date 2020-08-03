@@ -1,6 +1,12 @@
 # data_science_utils
 Repository for my personal code about data science, data preprocessing and machine learning
 
+## Prerequisites
+
+- Python version 3.7 (or a pyenv environment with python 3.7)
+- poetry
+
+
 ## Tests
 
 To launch the tests use the following commands:
@@ -15,7 +21,7 @@ poetry run nostests
 
 #### Multilabel classification
 
-Implementation of the classifier chain and the ensemble of classifier chain used to resolve the problem of Multi-label Classification. Based on the papers: __Classifier Chains for Multi-label Classification (2009), Jesse Read, Bernhard Pfahringer, Geoff Holmes, Eibe Frank__ and __Assessing the multi-labelness of multi-label data (2019), Laurence A. F. Park, Yi Guo, Jesse Read__.
+Implementation of the classifier chain and the ensemble of classifier chain used to resolve the problem of Multi-label Classification. Based on the papers: _Classifier Chains for Multi-label Classification (2009), Jesse Read, Bernhard Pfahringer, Geoff Holmes, Eibe Frank_ and _Assessing the multi-labelness of multi-label data (2019), Laurence A. F. Park, Yi Guo, Jesse Read_.
 
 #### K-Means
 
