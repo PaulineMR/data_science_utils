@@ -57,9 +57,6 @@ class TestMultilabelClassification(unittest.TestCase):
         expected_columns = list(self.df.columns)
         expected_columns += possible_labels
         expected_columns.remove(self.output_feature)
-        print(self.df.columns)
-        print(expected_columns)
-        print(df_decomposed.columns)
         self.assertEqual(len(df_decomposed.columns), len(expected_columns))
         cols = list(df_decomposed.columns)
         cols.sort()

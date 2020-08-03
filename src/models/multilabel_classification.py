@@ -10,13 +10,10 @@ import copy
 from random import shuffle
 
 # External imports
-import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
 # Internal imports
 from src.models.exceptions import NotFittedError
-
-# from exceptions import NotFittedError
 
 #####################
 # Private functions #
@@ -211,7 +208,7 @@ class ClassifierChainModel:
         # Check that the model is trained
         if not self.trained():
             raise NotFittedError(
-                "self ClassifierChainModel instance is not fitted yet. Call 'fit' with appropriate arguments before\
+                "This ClassifierChainModel instance is not fitted yet. Call 'fit' with appropriate arguments before\
                 using self estimator."
             )
 
@@ -404,7 +401,7 @@ class EnsembleClassifierChainModel:
         # Check that the model is trained
         if not self.trained():
             raise NotFittedError(
-                "This ClassifierChainModel instance is not fitted yet. Call 'fit' with appropriate arguments before\
+                "This EnsembleClassifierChainModel instance is not fitted yet. Call 'fit' with appropriate arguments before\
                 using this estimator."
             )
 
@@ -415,38 +412,3 @@ class EnsembleClassifierChainModel:
 
         # The models vote for the labels
         return self._voting_for_final_labels(all_predictions)
-
-
-#################
-# Main function #
-#################
-
-if __name__ == "__main__":
-    d = [
-        {"film": ["SF", "Drama"], "duree": 75},
-        {"film": ["Romance", "Drama"], "duree": 67},
-        {"film": ["SF"], "duree": 86},
-        {"film": ["Romance", "Drama"], "duree": 73},
-    ]
-    df = pd.DataFrame(d, index=range(4))
-    possible_labels = unique_value_series_of_list(df.film)
-    print("LABELS", possible_labels)
-    df = series_of_list_to_dataframe(df, "film", possible_labels)
-    print(df)
-    CC = ClassifierChainModel(labels=possible_labels)
-    CC.fit(df)
-    d_pred = [
-        {"duree": 75},
-        {"duree": 67},
-        {"duree": 86},
-        {"duree": 73},
-    ]
-    df_pred = pd.DataFrame(d_pred, index=range(4))
-    print(CC.predict(df_pred))
-
-    print("ENSEMBLE")
-    ECC = EnsembleClassifierChainModel(
-        labels=possible_labels, nb_estimator=10, subsample_bagging=0.5
-    )
-    ECC.fit(df)
-    print(ECC.predict(df_pred))
