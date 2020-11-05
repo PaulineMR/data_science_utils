@@ -127,6 +127,7 @@ def generate_periodic_variables(
     algorithm. As those informations are periodics (for example after angle=359 it is angle=0) it
     is interesting to add the information about periodicity.
     The new features will be cos_{periodic_variable}, sin_{periodic_variable}.
+    Blogpost on the subject: http://blog.davidkaleko.com/feature-engineering-cyclical-features.html
 
     Parameters
     ----------
@@ -276,7 +277,7 @@ def get_periodic_temporal_variable(df, date_variable):
     temporal_df = generate_periodic_variables(
         temporal_df,
         periodic_variable="day_of_month",
-        modulo_variable=31,
+        modulo_variable=31, # Decided to put on the max number of day
         drop_original_variable=True,
     )
     # Month should be between 0->11 (and not 1->12)
